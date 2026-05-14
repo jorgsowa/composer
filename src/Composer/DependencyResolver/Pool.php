@@ -37,7 +37,7 @@ class Pool implements \Countable
     protected $versionParser;
     /** @var array<string, array<string, BasePackage[]>> */
     protected $providerCache = [];
-    /** @var BasePackage[] */
+    /** @var \SplObjectStorage<BasePackage, bool> */
     protected $unacceptableFixedOrLockedPackages;
     /** @var array<string, array<string, string>> Map of package name => normalized version => pretty version */
     protected $removedVersions = [];
@@ -52,18 +52,22 @@ class Pool implements \Countable
 
     /**
      * @param BasePackage[] $packages
-     * @param BasePackage[] $unacceptableFixedOrLockedPackages
+     * @param \SplObjectStorage<BasePackage, bool> $unacceptableFixedOrLockedPackages
      * @param array<string, array<string, string>> $removedVersions
      * @param array<string, array<string, string>> $removedVersionsByPackage
      * @param array<string, array<string, array<SecurityAdvisory|PartialSecurityAdvisory>>> $securityRemovedVersions
      * @param array<string, array<string, string>> $abandonedRemovedVersions
      * @param array<string, array<string, list<FilterListEntry>>> $filterListRemovedVersions
      */
-    public function __construct(array $packages = [], array $unacceptableFixedOrLockedPackages = [], array $removedVersions = [], array $removedVersionsByPackage = [], array $securityRemovedVersions = [], array $abandonedRemovedVersions = [], array $filterListRemovedVersions = [])
+    public function __construct(array $packages = [], ?\SplObjectStorage $unacceptableFixedOrLockedPackages = null, array $removedVersions = [], array $removedVersionsByPackage = [], array $securityRemovedVersions = [], array $abandonedRemovedVersions = [], array $filterListRemovedVersions = [])
     {
         $this->versionParser = new VersionParser;
         $this->setPackages($packages);
-        $this->unacceptableFixedOrLockedPackages = $unacceptableFixedOrLockedPackages;
+        if ($unacceptableFixedOrLockedPackages === null) {
+            $this->unacceptableFixedOrLockedPackages = new \SplObjectStorage();
+        } else {
+            $this->unacceptableFixedOrLockedPackages = $unacceptableFixedOrLockedPackages;
+        }
         $this->removedVersions = $removedVersions;
         $this->removedVersionsByPackage = $removedVersionsByPackage;
         $this->securityRemovedVersions = $securityRemovedVersions;
@@ -380,13 +384,13 @@ class Pool implements \Countable
 
     public function isUnacceptableFixedOrLockedPackage(BasePackage $package): bool
     {
-        return \in_array($package, $this->unacceptableFixedOrLockedPackages, true);
+        return isset($this->unacceptableFixedOrLockedPackages[$package]);
     }
 
     /**
-     * @return BasePackage[]
+     * @return \SplObjectStorage<BasePackage, bool>
      */
-    public function getUnacceptableFixedOrLockedPackages(): array
+    public function getUnacceptableFixedOrLockedPackages(): \SplObjectStorage
     {
         return $this->unacceptableFixedOrLockedPackages;
     }

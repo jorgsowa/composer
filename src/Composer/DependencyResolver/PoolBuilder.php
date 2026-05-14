@@ -340,7 +340,11 @@ class PoolBuilder
             $this->unacceptableFixedOrLockedPackages = $prePoolCreateEvent->getUnacceptableFixedPackages();
         }
 
-        $pool = new Pool($this->packages, $this->unacceptableFixedOrLockedPackages);
+        $unacceptableStorage = new \SplObjectStorage();
+        foreach ($this->unacceptableFixedOrLockedPackages as $package) {
+            $unacceptableStorage[$package] = true;
+        }
+        $pool = new Pool($this->packages, $unacceptableStorage);
 
         $this->aliasMap = [];
         $this->packagesToLoad = [];
